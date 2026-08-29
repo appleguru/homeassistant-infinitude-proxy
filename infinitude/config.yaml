@@ -1,0 +1,34 @@
+---
+name: Infinitude
+version: "1.0.0"
+slug: infinitude
+description: >-
+  Local proxy for Carrier, Bryant, ICP, Heil and Tempstar Infinity Touch
+  thermostats. Wraps the upstream nebulous/infinitude project so Home Assistant
+  manages it and its state is included in Home Assistant backups.
+url: https://github.com/appleguru/homeassistant-infinitude-proxy
+arch:
+  - aarch64
+  - amd64
+init: false
+startup: services
+boot: auto
+host_network: true
+uart: true
+ports:
+  3000/tcp: 3000
+ports_description:
+  3000/tcp: >-
+    Infinitude web UI and proxy endpoint. Point your thermostat's HTTP proxy
+    setting here, and point the Infinitude Beyond integration here too.
+options:
+  port: 3000
+  mode: Production
+  pass_reqs: 1020
+schema:
+  port: port
+  mode: list(Production|Development)
+  pass_reqs: int(0,)
+  app_secret: str?
+  serial_tty: str?
+  serial_socket: str?
