@@ -1,0 +1,34 @@
+---
+configuration:
+  port:
+    name: Port
+    description: >-
+      Port Infinitude listens on. Your thermostat's HTTP proxy setting and the
+      Infinitude Beyond integration must both point at this port.
+  mode:
+    name: Log mode
+    description: >-
+      Production for normal use. Development enables verbose logging when
+      troubleshooting.
+  pass_reqs:
+    name: Passthrough requests
+    description: >-
+      How many requests to pass through to Carrier's servers before Infinitude
+      answers locally. Leave at the default unless you know why you are
+      changing it.
+  app_secret:
+    name: App secret
+    description: >-
+      Signs session cookies. Leave blank to generate one automatically and
+      store it in the add-on's data directory.
+  serial_tty:
+    name: Serial device
+    description: >-
+      Optional serial device for direct ABCD-bus access, for example
+      /dev/ttyUSB0. Untested.
+  serial_socket:
+    name: Serial socket
+    description: >-
+      Optional network socket for a remote serial bridge. Untested.
+network:
+  3000/tcp: Infinitude web UI and thermostat proxy endpoint
