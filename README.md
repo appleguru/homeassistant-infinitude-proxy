@@ -8,24 +8,6 @@ Heil and Tempstar).
 
 This is not affiliated with the upstream project.
 
-## Why
-
-Most people run Infinitude on Home Assistant OS as a hand-created Docker
-container, usually through Portainer — which is what upstream's own install
-notes describe. That works, but it has three costs:
-
-- Supervisor marks the system as unsupported, because a third-party container
-  is running alongside Home Assistant.
-- The container is invisible to Home Assistant backups.
-- State lives in the container's writable layer, so recreating the container
-  to pick up a new image silently throws your configuration away.
-
-Packaging it as an app fixes all three. Supervisor owns the lifecycle,
-state lives in `/data`, and backups pick it up.
-
-The Portainer app has since been removed from the community repository,
-which makes the hand-rolled route harder to set up in the first place.
-
 ## Installation
 
 Click the badge above, or add
@@ -39,12 +21,6 @@ Full setup and migration instructions are in [the app docs](infinitude/DOCS.md).
 [Infinitude Beyond][beyond] — a HACS custom integration that turns the
 Infinitude API into Home Assistant climate entities. The app provides the
 proxy; the integration provides the entities. You want both.
-
-## Architectures
-
-`aarch64` and `amd64`. Supervisor has deprecated `armhf`, `armv7` and
-`i386`, so they are not declared. The upstream image is published as a
-multi-arch manifest, so the correct variant is selected automatically.
 
 ## License
 
