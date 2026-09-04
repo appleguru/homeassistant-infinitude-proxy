@@ -25,7 +25,10 @@ mkdir -p "${STATE_DIR}"
 if [ -d "${APP_DIR}/state" ] && [ ! -L "${APP_DIR}/state" ]; then
     if [ -n "$(ls -A "${APP_DIR}/state" 2>/dev/null)" ]; then
         log "Seeding ${STATE_DIR} from the image's bundled state directory"
-        cp -a "${APP_DIR}/state/." "${STATE_DIR}/" 2>/dev/null || true
+        if ! cp -a "${APP_DIR}/state/." "${STATE_DIR}/"; then
+            log "ERROR: failed to seed ${STATE_DIR} from ${APP_DIR}/state"
+            exit 1
+        fi
     fi
     rm -rf "${APP_DIR}/state"
 fi
