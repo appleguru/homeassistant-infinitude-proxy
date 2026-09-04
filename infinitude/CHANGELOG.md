@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.1
+
+- Pinned the upstream `nebulous/infinitude` image to
+  `sha256:66f64d156c6f4537369d6ea587cf4440cf9607b0e7b8296468febf96bafebe00`,
+  so rebuilds are reproducible instead of following the `latest` tag.
+
 ## 1.1.0
 
 - Renamed add-on terminology to app, matching Home Assistant 2026.2.
