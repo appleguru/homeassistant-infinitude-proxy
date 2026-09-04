@@ -1,6 +1,6 @@
 ARG BUILD_FROM
-ARG UPSTREAM_TAG=latest
-FROM nebulous/infinitude:${UPSTREAM_TAG}
+ARG UPSTREAM_REF=nebulous/infinitude@sha256:66f64d156c6f4537369d6ea587cf4440cf9607b0e7b8296468febf96bafebe00
+FROM ${UPSTREAM_REF}
 
 COPY run.sh render-options.pl /opt/infinitude-app/
 
