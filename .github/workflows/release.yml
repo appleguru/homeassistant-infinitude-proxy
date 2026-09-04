@@ -1,0 +1,75 @@
+---
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - infinitude/config.yaml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+
+jobs:
+  release:
+    name: Tag and publish
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Read the declared version
+        id: version
+        run: |
+          set -euo pipefail
+          version="$(grep -E '^version: ' infinitude/config.yaml | cut -d'"' -f2)"
+          case "${version}" in
+            ''|*[!0-9.]*)
+              echo "unexpected version in infinitude/config.yaml: '${version}'" >&2
+              exit 1
+              ;;
+          esac
+          echo "version=${version}" >> "${GITHUB_OUTPUT}"
+          if git rev-parse -q --verify "refs/tags/v${version}" >/dev/null; then
+            echo "released=true" >> "${GITHUB_OUTPUT}"
+            echo "v${version} is already tagged, nothing to release"
+          else
+            echo "released=false" >> "${GITHUB_OUTPUT}"
+            echo "v${version} is not tagged yet"
+          fi
+
+      - name: Extract the changelog entry
+        if: steps.version.outputs.released == 'false'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          python3 -c 'import sys,re; v=sys.argv[1]; b=open("infinitude/CHANGELOG.md",encoding="utf-8").read(); m=re.search(r"^## "+re.escape(v)+r"\s*\n(.*?)(?=^## |\Z)", b, re.S|re.M); sys.stdout.write(m.group(1).strip() if m else "")' "${VERSION}" > notes.md
+          if [ ! -s notes.md ]; then
+            echo "no '## ${VERSION}' section found in infinitude/CHANGELOG.md" >&2
+            exit 1
+          fi
+          cat notes.md
+
+      - name: Tag and publish the release
+        if: steps.version.outputs.released == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "v${VERSION}" -m "${VERSION}"
+          git push origin "v${VERSION}"
+          gh release create "v${VERSION}" \
+            --verify-tag \
+            --title "${VERSION}" \
+            --notes-file notes.md
