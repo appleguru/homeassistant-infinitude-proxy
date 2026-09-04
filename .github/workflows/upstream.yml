@@ -1,0 +1,107 @@
+---
+name: Upstream digest
+
+on:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: upstream-digest
+
+env:
+  UPSTREAM_IMAGE: nebulous/infinitude
+  UPSTREAM_TAG: latest
+
+jobs:
+  check:
+    name: Check the upstream image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v5
+
+      - name: Resolve the upstream manifest digest
+        id: upstream
+        run: |
+          set -euo pipefail
+          token="$(curl -fsSL "https://auth.docker.io/token?service=registry.docker.io&scope=repository:${UPSTREAM_IMAGE}:pull" | jq -r .token)"
+          digest="$(curl -fsSI -H "Authorization: Bearer ${token}" -H "Accept: application/vnd.docker.distribution.manifest.list.v2+json" -H "Accept: application/vnd.oci.image.index.v1+json" "https://registry-1.docker.io/v2/${UPSTREAM_IMAGE}/manifests/${UPSTREAM_TAG}" | tr -d '\r' | grep -i '^docker-content-digest:' | awk '{print $2}')"
+          case "${digest}" in
+            sha256:*) ;;
+            *) echo "could not resolve a digest for ${UPSTREAM_IMAGE}:${UPSTREAM_TAG}" >&2; exit 1 ;;
+          esac
+          echo "digest=${digest}" >> "${GITHUB_OUTPUT}"
+          echo "upstream ${UPSTREAM_IMAGE}:${UPSTREAM_TAG} is ${digest}"
+
+      - name: Compare against the pinned digest
+        id: compare
+        env:
+          NEW_DIGEST: ${{ steps.upstream.outputs.digest }}
+        run: |
+          set -euo pipefail
+          pinned="$(grep -oE 'sha256:[0-9a-f]{64}' infinitude/Dockerfile | head -1)"
+          if [ -z "${pinned}" ]; then
+            echo "no pinned digest found in infinitude/Dockerfile" >&2
+            exit 1
+          fi
+          echo "pinned=${pinned}" >> "${GITHUB_OUTPUT}"
+          if [ "${pinned}" = "${NEW_DIGEST}" ]; then
+            echo "changed=false" >> "${GITHUB_OUTPUT}"
+            echo "already pinned to the current upstream digest"
+          else
+            echo "changed=true" >> "${GITHUB_OUTPUT}"
+            echo "pinned ${pinned} differs from upstream ${NEW_DIGEST}"
+          fi
+
+      - name: Open a pull request
+        if: steps.compare.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NEW_DIGEST: ${{ steps.upstream.outputs.digest }}
+          OLD_DIGEST: ${{ steps.compare.outputs.pinned }}
+        run: |
+          set -euo pipefail
+          short="${NEW_DIGEST#sha256:}"
+          branch="upstream-digest-${short:0:12}"
+          if [ -n "$(gh pr list --head "${branch}" --state open --json number --jq '.[].number')" ]; then
+            echo "a pull request for ${branch} is already open"
+            exit 0
+          fi
+
+          current="$(grep -E '^version: ' infinitude/config.yaml | cut -d'"' -f2)"
+          major="${current%%.*}"
+          rest="${current#*.}"
+          minor="${rest%%.*}"
+          patch="${rest#*.}"
+          next="${major}.${minor}.$((patch + 1))"
+
+          sed -i "s|${OLD_DIGEST}|${NEW_DIGEST}|" infinitude/Dockerfile
+          sed -i "s|^version: \"${current}\"|version: \"${next}\"|" infinitude/config.yaml
+          python3 -c 'import sys; p="infinitude/CHANGELOG.md"; b=open(p,encoding="utf-8").read(); v,d=sys.argv[1],sys.argv[2]; e="## "+v+"\n\n- Updated the pinned upstream image to "+d+".\n\n"; open(p,"w",encoding="utf-8").write(b.replace("# Changelog\n\n","# Changelog\n\n"+e,1))' "${next}" "${NEW_DIGEST}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "${branch}"
+          git add infinitude/Dockerfile infinitude/config.yaml infinitude/CHANGELOG.md
+          git commit -m "Update upstream image pin to ${next}"
+          git push -u origin "${branch}"
+
+          {
+            echo "Upstream ${UPSTREAM_IMAGE}:${UPSTREAM_TAG} has moved."
+            echo
+            echo "- was: ${OLD_DIGEST}"
+            echo "- now: ${NEW_DIGEST}"
+            echo
+            echo "The app version is bumped to ${next} so Supervisor offers the update once this is merged."
+            echo
+            echo "Review the upstream changes before merging: https://github.com/${UPSTREAM_IMAGE}/commits"
+          } > pr-body.md
+
+          gh pr create \
+            --title "Update upstream image pin (${next})" \
+            --body-file pr-body.md
