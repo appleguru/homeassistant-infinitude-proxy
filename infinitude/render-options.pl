@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# Renders /infinitude/infinitude.json from the add-on's options.json.
+# Renders /infinitude/infinitude.json from the app's options.json.
 #
 # The upstream image is Alpine with apk purged, so there is no jq and no
 # package manager to install one. Perl is guaranteed present, because

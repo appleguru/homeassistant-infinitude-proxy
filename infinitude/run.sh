@@ -1,21 +1,21 @@
 #!/bin/sh
-# Entrypoint for the Infinitude Home Assistant add-on.
+# Entrypoint for the Infinitude Home Assistant app.
 #
 # POSIX sh only: the upstream image is Alpine (busybox sh), with no bash.
 #
-# Keeps runtime state under /data so it survives add-on restarts, updates
+# Keeps runtime state under /data so it survives app restarts, updates
 # and rebuilds, and is captured by Home Assistant backups.
 set -eu
 
 OPTIONS_FILE="/data/options.json"
 STATE_DIR="/data/state"
 APP_DIR="/infinitude"
-HELPER="/opt/infinitude-addon/render-options.pl"
+HELPER="/opt/infinitude-app/render-options.pl"
 
-log() { echo "[infinitude-addon] $*"; }
+log() { echo "[infinitude-app] $*"; }
 
 if [ ! -f "${OPTIONS_FILE}" ]; then
-    log "ERROR: ${OPTIONS_FILE} not found. Is this running as a Home Assistant add-on?"
+    log "ERROR: ${OPTIONS_FILE} not found. Is this running as a Home Assistant app?"
     exit 1
 fi
 

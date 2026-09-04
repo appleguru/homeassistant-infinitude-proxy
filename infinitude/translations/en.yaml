@@ -20,7 +20,7 @@ configuration:
     name: App secret
     description: >-
       Signs session cookies. Leave blank to generate one automatically and
-      store it in the add-on's data directory.
+      store it in the app's data directory.
   serial_tty:
     name: Serial device
     description: >-
