@@ -14,12 +14,6 @@ init: false
 startup: services
 host_network: true
 uart: true
-ports:
-  3000/tcp: 3000
-ports_description:
-  3000/tcp: >-
-    Infinitude web UI and proxy endpoint. Point your thermostat's HTTP proxy
-    setting here, and point the Infinitude Beyond integration here too.
 options:
   port: 3000
   mode: Production

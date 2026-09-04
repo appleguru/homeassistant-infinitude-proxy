@@ -30,5 +30,3 @@ configuration:
     name: Serial socket
     description: >-
       Optional network socket for a remote serial bridge. Untested.
-network:
-  3000/tcp: Infinitude web UI and thermostat proxy endpoint
