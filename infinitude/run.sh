@@ -41,7 +41,16 @@ fi
 ln -sfn "${CONFIG_FILE}" "${APP_DIR}/infinitude.json"
 
 # The helper writes infinitude.json and echoes "<port> <mode>".
-set -- $(perl "${HELPER}")
+if ! HELPER_OUT="$(perl "${HELPER}")"; then
+    log "ERROR: ${HELPER} failed"
+    exit 1
+fi
+
+set -- ${HELPER_OUT}
+if [ "$#" -ne 2 ]; then
+    log "ERROR: ${HELPER} returned unexpected output: ${HELPER_OUT}"
+    exit 1
+fi
 PORT="$1"
 MODE="$2"
 
