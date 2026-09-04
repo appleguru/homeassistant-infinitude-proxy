@@ -30,7 +30,7 @@ which makes the hand-rolled route harder to set up in the first place.
 
 Click the badge above, or add
 `https://github.com/appleguru/homeassistant-infinitude-proxy` under **Settings → Apps →
-Install app → ⋮ → Repositories**, then install **Infinitude**.
+App store → ⋮ → Repositories**, then install **Infinitude**.
 
 Full setup and migration instructions are in [the app docs](infinitude/DOCS.md).
 

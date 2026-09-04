@@ -12,7 +12,7 @@ through HACS, to get climate entities in Home Assistant.
 
 ## Installation
 
-1. Add this repository to **Settings → Apps → Install app → ⋮ →
+1. Add this repository to **Settings → Apps → App store → ⋮ →
    Repositories**.
 2. Install **Infinitude** and start it.
 3. On the thermostat: **Menu → Wireless → Advanced Settings** and set the
