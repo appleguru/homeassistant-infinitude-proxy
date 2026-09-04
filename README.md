@@ -18,18 +18,14 @@ Full setup and migration instructions are in [the app docs](infinitude/DOCS.md).
 
 ## Pair it with
 
-[Infinitude Beyond][beyond] — a HACS custom integration that turns the
-Infinitude API into Home Assistant climate entities. The app provides the
+[Infinitude Beyond][beyond], a HACS custom integration that turns the
+Infinitude API into Home Assistant climate entities. This app provides the
 proxy; the integration provides the entities. You want both.
 
 ## Upstream tracking
 
 We track [nebulous/infinitude][upstream] and do releases to stay up to date
 with the upstream project.
-
-## License
-
-MIT, the same license as [nebulous/infinitude][upstream].
 
 [upstream]: https://github.com/nebulous/infinitude
 [beyond]: https://github.com/MizterB/homeassistant-infinitude-beyond
