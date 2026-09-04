@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.1.0
+
+- Renamed add-on terminology to app, matching Home Assistant 2026.2.
+- Added an app icon.
+- `infinitude.json` now lives in `/data` and app options are merged over it,
+  so settings written by Infinitude itself survive restarts and are captured
+  by Home Assistant backups.
+- Startup fails loudly if the options helper or the state seed fails, instead
+  of continuing with a broken configuration.
+- The app secret file is created with `0600` permissions atomically.
+- Removed the `ports` mapping, which had no effect under host networking and
+  could disagree with the configured `port`.
+
 ## 1.0.0
 
 - Initial release.
