@@ -9,6 +9,7 @@ set -eu
 
 OPTIONS_FILE="/data/options.json"
 STATE_DIR="/data/state"
+CONFIG_FILE="/data/infinitude.json"
 APP_DIR="/infinitude"
 HELPER="/opt/infinitude-app/render-options.pl"
 
@@ -29,6 +30,15 @@ if [ -d "${APP_DIR}/state" ] && [ ! -L "${APP_DIR}/state" ]; then
     rm -rf "${APP_DIR}/state"
 fi
 ln -sfn "${STATE_DIR}" "${APP_DIR}/state"
+
+if [ -f "${APP_DIR}/infinitude.json" ] && [ ! -L "${APP_DIR}/infinitude.json" ]; then
+    if [ ! -e "${CONFIG_FILE}" ]; then
+        log "Seeding ${CONFIG_FILE} from the image's bundled config"
+        cp -a "${APP_DIR}/infinitude.json" "${CONFIG_FILE}"
+    fi
+    rm -f "${APP_DIR}/infinitude.json"
+fi
+ln -sfn "${CONFIG_FILE}" "${APP_DIR}/infinitude.json"
 
 # The helper writes infinitude.json and echoes "<port> <mode>".
 set -- $(perl "${HELPER}")

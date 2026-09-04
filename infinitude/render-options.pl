@@ -12,7 +12,7 @@ use JSON::PP ();
 
 my $OPTIONS_FILE = '/data/options.json';
 my $SECRET_FILE  = '/data/app_secret';
-my $CONFIG_FILE  = '/infinitude/infinitude.json';
+my $CONFIG_FILE  = '/data/infinitude.json';
 
 my %DEFAULTS = (
     port          => 3000,
@@ -65,9 +65,19 @@ if ( $app_secret eq '' ) {
     }
 }
 
+my $existing = {};
+if ( open my $fh, '<', $CONFIG_FILE ) {
+    local $/;
+    my $raw = <$fh>;
+    close $fh;
+    my $decoded = eval { JSON::PP->new->decode($raw) };
+    $existing = $decoded if ref $decoded eq 'HASH';
+}
+
 open my $out, '>', $CONFIG_FILE or die "cannot write $CONFIG_FILE: $!";
 print $out JSON::PP->new->canonical->encode(
     {
+        %$existing,
         app_secret    => "$app_secret",
         pass_reqs     => 0 + val('pass_reqs'),
         serial_tty    => "" . val('serial_tty'),
