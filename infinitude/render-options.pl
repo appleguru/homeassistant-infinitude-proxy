@@ -8,6 +8,7 @@
 # Prints "<port> <mode>" on stdout for the calling shell script.
 use strict;
 use warnings;
+use Fcntl qw(O_WRONLY O_CREAT O_TRUNC);
 use JSON::PP ();
 
 my $OPTIONS_FILE = '/data/options.json';
@@ -58,10 +59,9 @@ if ( $app_secret eq '' ) {
         my @chars = ( 'a' .. 'f', 0 .. 9 );
         $app_secret = join '', map { $chars[ int rand @chars ] } 1 .. 64;
     }
-    if ( open my $fh, '>', $SECRET_FILE ) {
+    if ( sysopen my $fh, $SECRET_FILE, O_WRONLY | O_CREAT | O_TRUNC, 0600 ) {
         print $fh $app_secret;
         close $fh;
-        chmod 0600, $SECRET_FILE;
     }
 }
 
