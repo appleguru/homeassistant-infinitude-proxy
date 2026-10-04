@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.2
+
+- Updated the pinned upstream image to sha256:df0b5b2f37a357e81679359edbc99600543b8e4bc88776e5767692e2d0d0c9e7.
+
 ## 1.1.1
 
 - Pinned the upstream `nebulous/infinitude` image to
