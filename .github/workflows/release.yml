@@ -37,12 +37,12 @@ jobs:
               ;;
           esac
           echo "version=${version}" >> "${GITHUB_OUTPUT}"
-          if git rev-parse -q --verify "refs/tags/v${version}" >/dev/null; then
+          if git rev-parse -q --verify "refs/tags/${version}" >/dev/null; then
             echo "released=true" >> "${GITHUB_OUTPUT}"
-            echo "v${version} is already tagged, nothing to release"
+            echo "${version} is already tagged, nothing to release"
           else
             echo "released=false" >> "${GITHUB_OUTPUT}"
-            echo "v${version} is not tagged yet"
+            echo "${version} is not tagged yet"
           fi
 
       - name: Extract the changelog entry
@@ -67,9 +67,9 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag -a "v${VERSION}" -m "${VERSION}"
-          git push origin "v${VERSION}"
-          gh release create "v${VERSION}" \
+          git tag -a "${VERSION}" -m "${VERSION}"
+          git push origin "${VERSION}"
+          gh release create "${VERSION}" \
             --verify-tag \
             --title "${VERSION}" \
             --notes-file notes.md
