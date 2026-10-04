@@ -2,7 +2,9 @@
 
 ## 1.1.2
 
-- Updated the pinned upstream image to sha256:df0b5b2f37a357e81679359edbc99600543b8e4bc88776e5767692e2d0d0c9e7.
+- Updated the pinned upstream image to `sha256:df0b5b2f37a357e81679359edbc99600543b8e4bc88776e5767692e2d0d0c9e7`.
+- Upstream changes ([ad655f8...38994dd](https://github.com/nebulous/infinitude/compare/ad655f8...38994dd)):
+  - implement versioning scheme & minor test tweaks (nebulous/infinitude#233) (38994dd)
 
 ## 1.1.1
 
