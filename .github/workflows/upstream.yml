@@ -1,5 +1,5 @@
 ---
-name: Upstream digest
+name: Upstream release
 
 on:
   schedule:
@@ -11,80 +11,82 @@ permissions:
   contents: write
 
 concurrency:
-  group: upstream-digest
+  group: upstream-release
 
 env:
   UPSTREAM_IMAGE: nebulous/infinitude
-  UPSTREAM_TAG: latest
   UPSTREAM_REPO: nebulous/infinitude
 
 jobs:
   check:
-    name: Check the upstream image
+    name: Check for an upstream release
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repository
         uses: actions/checkout@v5
 
-      - name: Resolve the upstream manifest digest
+      - name: Compare the latest upstream release against the pin
+        id: compare
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          latest="$(gh api "repos/${UPSTREAM_REPO}/releases/latest" --jq .tag_name)"
+          pinned="$(sed -nE "s|^ARG UPSTREAM_REF=${UPSTREAM_IMAGE}:([^@]+)@sha256:[0-9a-f]{64}$|\1|p" infinitude/Dockerfile)"
+          for v in "${latest}" "${pinned}"; do
+            case "${v}" in
+              ''|*[!0-9.]*)
+                echo "unexpected version: latest upstream '${latest}', pinned '${pinned}'" >&2
+                exit 1
+                ;;
+            esac
+          done
+          echo "version=${latest}" >> "${GITHUB_OUTPUT}"
+          newest="$(printf '%s\n%s\n' "${pinned}" "${latest}" | sort -V | tail -1)"
+          if [ "${latest}" = "${pinned}" ] || [ "${newest}" = "${pinned}" ]; then
+            echo "changed=false" >> "${GITHUB_OUTPUT}"
+            echo "already pinned to upstream ${pinned}"
+          else
+            echo "changed=true" >> "${GITHUB_OUTPUT}"
+            echo "upstream released ${latest}, pinned to ${pinned}"
+          fi
+
+      - name: Resolve the upstream image digest
         id: upstream
+        if: steps.compare.outputs.changed == 'true'
+        env:
+          UPSTREAM_VERSION: ${{ steps.compare.outputs.version }}
         run: |
           set -euo pipefail
           token="$(curl -fsSL "https://auth.docker.io/token?service=registry.docker.io&scope=repository:${UPSTREAM_IMAGE}:pull" | jq -r .token)"
-          digest="$(curl -fsSI -H "Authorization: Bearer ${token}" -H "Accept: application/vnd.docker.distribution.manifest.list.v2+json" -H "Accept: application/vnd.oci.image.index.v1+json" "https://registry-1.docker.io/v2/${UPSTREAM_IMAGE}/manifests/${UPSTREAM_TAG}" | tr -d '\r' | grep -i '^docker-content-digest:' | awk '{print $2}')"
+          digest="$(curl -fsSI -H "Authorization: Bearer ${token}" -H "Accept: application/vnd.docker.distribution.manifest.list.v2+json" -H "Accept: application/vnd.oci.image.index.v1+json" "https://registry-1.docker.io/v2/${UPSTREAM_IMAGE}/manifests/${UPSTREAM_VERSION}" | tr -d '\r' | grep -i '^docker-content-digest:' | awk '{print $2}')" || true
           case "${digest}" in
-            sha256:*) ;;
-            *) echo "could not resolve a digest for ${UPSTREAM_IMAGE}:${UPSTREAM_TAG}" >&2; exit 1 ;;
+            sha256:*)
+              echo "digest=${digest}" >> "${GITHUB_OUTPUT}"
+              echo "${UPSTREAM_IMAGE}:${UPSTREAM_VERSION} is ${digest}"
+              ;;
+            *)
+              echo "::notice::${UPSTREAM_IMAGE}:${UPSTREAM_VERSION} is not published yet, retrying on the next run"
+              ;;
           esac
-          echo "digest=${digest}" >> "${GITHUB_OUTPUT}"
-          echo "upstream ${UPSTREAM_IMAGE}:${UPSTREAM_TAG} is ${digest}"
 
-      - name: Compare against the pinned digest
-        id: compare
-        env:
-          NEW_DIGEST: ${{ steps.upstream.outputs.digest }}
-        run: |
-          set -euo pipefail
-          pinned="$(grep -oE 'sha256:[0-9a-f]{64}' infinitude/Dockerfile | head -1)"
-          if [ -z "${pinned}" ]; then
-            echo "no pinned digest found in infinitude/Dockerfile" >&2
-            exit 1
-          fi
-          echo "pinned=${pinned}" >> "${GITHUB_OUTPUT}"
-          if [ "${pinned}" = "${NEW_DIGEST}" ]; then
-            echo "changed=false" >> "${GITHUB_OUTPUT}"
-            echo "already pinned to the current upstream digest"
-          else
-            echo "changed=true" >> "${GITHUB_OUTPUT}"
-            echo "pinned ${pinned} differs from upstream ${NEW_DIGEST}"
-          fi
-
-      - name: Bump the version and release
-        if: steps.compare.outputs.changed == 'true'
+      - name: Match the upstream version and release
+        if: steps.upstream.outputs.digest != ''
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          UPSTREAM_VERSION: ${{ steps.compare.outputs.version }}
           NEW_DIGEST: ${{ steps.upstream.outputs.digest }}
-          OLD_DIGEST: ${{ steps.compare.outputs.pinned }}
         run: |
           set -euo pipefail
-          current="$(grep -E '^version: ' infinitude/config.yaml | cut -d'"' -f2)"
-          major="${current%%.*}"
-          rest="${current#*.}"
-          minor="${rest%%.*}"
-          patch="${rest#*.}"
-          next="${major}.${minor}.$((patch + 1))"
-
-          changes="$(.github/scripts/upstream-changes.sh "${OLD_DIGEST}" "${NEW_DIGEST}")" \
-            || changes="- Upstream changes: https://github.com/${UPSTREAM_REPO}/commits"
-
-          sed -i "s|${OLD_DIGEST}|${NEW_DIGEST}|" infinitude/Dockerfile
-          sed -i "s|^version: \"${current}\"|version: \"${next}\"|" infinitude/config.yaml
-          python3 -c 'import sys; p="infinitude/CHANGELOG.md"; b=open(p,encoding="utf-8").read(); v,d,c=sys.argv[1:4]; e="## "+v+"\n\n- Updated the pinned upstream image to `"+d+"`.\n"+c+"\n\n"; open(p,"w",encoding="utf-8").write(b.replace("# Changelog\n\n","# Changelog\n\n"+e,1))' "${next}" "${NEW_DIGEST}" "${changes}"
+          sed -i -E "s|^ARG UPSTREAM_REF=.*|ARG UPSTREAM_REF=${UPSTREAM_IMAGE}:${UPSTREAM_VERSION}@${NEW_DIGEST}|" infinitude/Dockerfile
+          sed -i -E "s|^version: \".*\"|version: \"${UPSTREAM_VERSION}\"|" infinitude/config.yaml
+          gh api "repos/${UPSTREAM_REPO}/releases/tags/${UPSTREAM_VERSION}" --jq .body > upstream-notes.md
+          .github/scripts/changelog-entry.py "${UPSTREAM_VERSION}" < upstream-notes.md
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add infinitude/Dockerfile infinitude/config.yaml infinitude/CHANGELOG.md
-          git commit -m "Update upstream image pin to ${next}"
+          git commit -m "Update Infinitude to ${UPSTREAM_VERSION}"
           git push origin HEAD:main
 
           # Pushes made with GITHUB_TOKEN do not trigger other workflows, so

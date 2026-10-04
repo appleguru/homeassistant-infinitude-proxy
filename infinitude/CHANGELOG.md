@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026.9.0
+
+Upstream release notes: https://github.com/nebulous/infinitude/releases/tag/2026.9.0
+
+First CalVer release. Version is visible in the boot log, at `/api/version`, and on the web UI's About page; Docker images are tagged with the version alongside `latest`.
+
+#### Changes
+
+- **Timed holds are bus-writable.** A 3B03 write with change flags `0x82`, the zone's `zones_holding` bit clear, and minutes in `hold_duration` arms a real timed hold (verified live against an Infinity Touch). Durations are quantized to the thermostat's 15-minute grid and clamped to [15, 1425] minutes. `/api/hold` now propagates timed holds over RS485 like permanent and cancel.
+- **Decoded 3B03 byte 37** as the per-zone timed-hold bitmask (`zones_timed`), replacing an opaque byte in the parser.
+- **Fixed the 3B02 mode nibble values:** 4 is heatpump-only, 5 is off (previously 4 was mislabeled off, and mode 5 failed to parse). Corrected against infinitive and InfinitESP.
+- **CalVer versioning and automated releases** (this machinery).
+
 ## 1.1.2
 
 - Updated the pinned upstream image to `sha256:df0b5b2f37a357e81679359edbc99600543b8e4bc88776e5767692e2d0d0c9e7`.

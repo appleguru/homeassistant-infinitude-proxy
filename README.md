@@ -24,8 +24,9 @@ proxy; the integration provides the entities. You want both.
 
 ## Upstream tracking
 
-We track [nebulous/infinitude][upstream] and do releases to stay up to date
-with the upstream project.
+We track [nebulous/infinitude][upstream] releases. When upstream publishes a
+new version, this app is released with the same version number and upstream's
+release notes.
 
 [upstream]: https://github.com/nebulous/infinitude
 [beyond]: https://github.com/MizterB/homeassistant-infinitude-beyond
