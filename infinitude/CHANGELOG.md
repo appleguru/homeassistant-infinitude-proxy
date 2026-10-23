@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026.10.0
+
+Upstream release notes: https://github.com/nebulous/infinitude/releases/tag/2026.10.0
+
+#### What's Changed
+* Namespace MQTT discovery for multiple instances by @brettonw in https://github.com/nebulous/infinitude/pull/235
+
+#### New Contributors
+* @brettonw made their first contribution in https://github.com/nebulous/infinitude/pull/235
+
+**Full Changelog**: https://github.com/nebulous/infinitude/compare/2026.9.0...2026.10.0
+
 ## 2026.9.0
 
 Upstream release notes: https://github.com/nebulous/infinitude/releases/tag/2026.9.0
